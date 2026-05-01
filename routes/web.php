@@ -1,29 +1,66 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 
-// 1. Tampilan Utama
 Route::get('/', function () {
-    $chirps = session('chirps', []);
+
+    $chirps = session()->get('temporary_chirps', []);
+    
     return view('welcome', ['chirps' => $chirps]);
-});
+})->name('home');
 
-// 2. Proses Simpan ke Session
-Route::post('/post-chirp', function (Request $request) {
+Route::post('/login-action', function (Request $request) {
     $request->validate([
-        'message' => 'required|string|max:255',
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
     ]);
 
-    $chirps = session('chirps', []);
+    $user = User::firstOrCreate(
+        ['email' => $request->email],
+        [
+            'name' => $request->name, 
+            'password' => Hash::make('password') 
+        ]
+    );
 
-    array_unshift($chirps, [
-        'name' => 'Guest User',
+    Auth::login($user);
+    $request->session()->regenerate();
+
+    return redirect()->route('home')->with('success', 'Selamat datang, ' . $user->name . '!');
+})->name('login');
+
+Route::post('/logout-action', function (Request $request) {
+
+    Auth::logout();
+    
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('home')->with('success', 'Berhasil keluar sistem.');
+})->name('logout');
+
+Route::post('/post-chirp', function (Request $request) {
+    if (!Auth::check()) {
+        return redirect()->route('home')->with('error', 'Silakan login terlebih dahulu!');
+    }
+    
+    $request->validate([
+        'message' => 'required|string|max:255'
+    ]);
+
+    $temporaryChirps = session()->get('temporary_chirps', []);
+
+    array_unshift($temporaryChirps, (object)[
         'message' => $request->message,
-        'time' => now()->diffForHumans(),
+        'user' => (object)['name' => Auth::user()->name], 
+        'created_at' => now(), 
     ]);
 
-    session(['chirps' => $chirps]);
+    session()->put('temporary_chirps', $temporaryChirps);
 
-    return redirect('/');
+    return redirect()->route('home')->with('success', 'Kicauan kamu telah muncul!');
 })->name('chirps.store');
