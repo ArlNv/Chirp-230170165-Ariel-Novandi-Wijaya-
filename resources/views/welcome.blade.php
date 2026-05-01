@@ -113,7 +113,7 @@
                         <div class="bg-base-200 p-8 mt-6 rounded-lg border-2 border-dashed border-primary/30">
                             <div class="text-center mb-6">
                                 <span class="text-5xl">🔑</span>
-                                <h2 class="text-xl font-bold mt-2">Akses Member</h2>
+                                <h2 class="text-xl font-bold mt-2">Silahkan Login</h2>
                                 <p class="text-sm opacity-60">Silakan login untuk mulai mengirim pesan</p>
                             </div>
 
